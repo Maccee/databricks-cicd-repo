@@ -38,8 +38,8 @@ jobs:
       env:
         DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
       run: |
-        databricks fs cp sample_sales_notebook.dbc dbfs:/Workspace/Users/marcus.hasselgren@devisioona.fi/Databricks/Implement CICD workflows --overwrite
-
+        databricks fs cp sample_sales_notebook.dbc dbfs:/Workspace/Users/marcus.hasselgren@devisioona.fi/Databricks/Implement_CICD_workflows --overwrite
+        
     # Step 6: Run Databricks Job
     - name: Run Databricks Job
       env:
