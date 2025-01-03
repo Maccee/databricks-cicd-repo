@@ -1,40 +1,50 @@
- name: CD Pipeline for Azure Databricks
+name: CD Pipeline for Azure Databricks
 
- on:
-   push:
-     branches:
-       - main
+on:
+  push:
+    branches:
+      - main
 
- jobs:
-   deploy:
-     runs-on: ubuntu-latest
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
 
-     steps:
-     - name: Checkout code
-       uses: actions/checkout@v3
+    steps:
+    # Step 1: Checkout Code
+    - name: Checkout code
+      uses: actions/checkout@v3
 
-     - name: Set up Python
-       uses: actions/setup-python@v4
-       with:
-         python-version: '3.x'
+    # Step 2: Set up Python Environment
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
 
-     - name: Install Databricks CLI
-       run: pip install databricks-cli
+    # Step 3: Install Databricks CLI
+    - name: Install Databricks CLI
+      run: |
+        pip install databricks-cli
 
-     - name: Configure Databricks CLI
-       run: |
-         databricks configure --token <<EOF
-         $
-         $
-         EOF
-     - name: Upload Notebook to DBFS
-       run: databricks fs cp sample_sales_notebook.dbc dbfs:/Workspace/Users/marcus.hasselgren@devisioona.fi/Databricks/Implement CICD workflows --overwrite
-       env:
-         DATABRICKS_TOKEN: $
+    # Step 4: Configure Databricks CLI
+    - name: Configure Databricks CLI
+      env:
+        DATABRICKS_HOST: https://adb-2645810494232482.2.azuredatabricks.net
+        DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+      run: |
+        echo -e "$DATABRICKS_HOST\n$DATABRICKS_TOKEN" | databricks configure --token
 
-     - name: Run Databricks Job
-       run: |
-         databricks jobs create --json-file job-config.json
-         databricks jobs run-now --job-id $(databricks jobs list | grep 'CD pipeline' | awk '{print $1}')
-       env:
-         DATABRICKS_TOKEN: $
+    # Step 5: Upload Notebook to DBFS
+    - name: Upload Notebook to DBFS
+      env:
+        DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+      run: |
+        databricks fs cp sample_sales_notebook.dbc dbfs:/Workspace/Users/marcus.hasselgren@devisioona.fi/Databricks/Implement_CICD_workflows --overwrite
+
+    # Step 6: Run Databricks Job
+    - name: Run Databricks Job
+      env:
+        DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+      run: |
+        databricks jobs create --json-file job-config.json
+        JOB_ID=$(databricks jobs list | grep 'CD pipeline' | awk '{print $1}')
+        databricks jobs run-now --job-id "$JOB_ID"
