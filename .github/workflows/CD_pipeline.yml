@@ -23,7 +23,7 @@ jobs:
     # Step 3: Install Databricks CLI
     - name: Install Databricks CLI
       run: |
-        pip install databricks-cli
+        pip install databricks-cli jq
 
     # Step 4: Configure Databricks CLI
     - name: Configure Databricks CLI
@@ -39,12 +39,25 @@ jobs:
         DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
       run: |
         databricks fs cp sample_sales_notebook.dbc dbfs:/Workspace/Users/marcus.hasselgren@devisioona.fi/Databricks/Implement_CICD_workflows --overwrite
-        
-    # Step 6: Run Databricks Job
-    - name: Run Databricks Job
+
+    # Step 6: Create and Run Databricks Job
+    - name: Create and Run Databricks Job
       env:
         DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
       run: |
-        databricks jobs create --json-file job-config.json
-        JOB_ID=$(databricks jobs list | grep 'CD pipeline' | awk '{print $1}')
-        databricks jobs run-now --job-id "$JOB_ID"
+        # Create the job and capture the job ID
+        RESPONSE=$(databricks jobs create --json-file job-config.json)
+        echo "Job Creation Response: $RESPONSE"
+        JOB_ID=$(echo $RESPONSE | jq -r '.job_id')
+
+        # Validate the job ID
+        if [ -z "$JOB_ID" ] || [ "$JOB_ID" = "null" ]; then
+          echo "Error: Job ID could not be extracted"
+          exit 1
+        fi
+
+        echo "Created Job ID: $JOB_ID"
+
+        # Run the job
+        RUN_RESPONSE=$(databricks jobs run-now --job-id "$JOB_ID")
+        echo "Job Run Response: $RUN_RESPONSE"
