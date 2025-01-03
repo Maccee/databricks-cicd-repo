@@ -28,7 +28,7 @@
      - name: Configure Databricks CLI
        run: |
          databricks configure --token <<EOF
-         $
+         $https://adb-2645810494232482.2.azuredatabricks.net/
          $
          EOF
 
