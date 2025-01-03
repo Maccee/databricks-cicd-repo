@@ -1,36 +1,41 @@
- name: CI Pipeline for Azure Databricks
+name: CI Pipeline for Azure Databricks
 
- on:
-   push:
-     branches:
-       - main
-   pull_request:
-     branches:
-       - main
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
 
- jobs:
-   deploy:
-     runs-on: ubuntu-latest
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
 
-     steps:
-     - name: Checkout code
-       uses: actions/checkout@v3
+    steps:
+    # Step 1: Checkout code
+    - name: Checkout code
+      uses: actions/checkout@v3
 
-     - name: Set up Python
-       uses: actions/setup-python@v4
-       with:
-         python-version: '3.x'
+    # Step 2: Set up Python environment
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
 
-     - name: Install Databricks CLI
-       run: |
-         pip install databricks-cli
+    # Step 3: Install Databricks CLI
+    - name: Install Databricks CLI
+      run: |
+        pip install databricks-cli
 
-     - name: Configure Databricks CLI
-       run: |
-         databricks configure --token <<EOF
-         $https://adb-2645810494232482.2.azuredatabricks.net/
-         $
-         EOF
+    # Step 4: Configure Databricks CLI
+    - name: Configure Databricks CLI
+      env:
+        DATABRICKS_HOST: https://adb-2645810494232482.2.azuredatabricks.net
+        DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+      run: |
+        echo -e "$DATABRICKS_HOST\n$DATABRICKS_TOKEN" | databricks configure --token
 
-     - name: Download Sample Data from DBFS
-       run: databricks fs cp dbfs:/FileStore/sample_sales.csv . --overwrite
+    # Step 5: Download Sample Data from DBFS
+    - name: Download Sample Data from DBFS
+      run: databricks fs cp dbfs:/FileStore/sample_sales.csv . --overwrite
